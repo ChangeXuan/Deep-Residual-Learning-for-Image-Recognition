@@ -424,6 +424,6 @@ def accuracy(output, target, topk=(1,)):
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 
-
+# 程序主入口
 if __name__ == '__main__':
     main()
