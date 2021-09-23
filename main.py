@@ -213,6 +213,9 @@ def main_worker(gpu, ngpus_per_node, args):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
 
+    # 从pytorch中数据集增强操作
+    # 从traindir中加载数据集
+    # 并对数据集中的图像加以一下操作
     train_dataset = datasets.ImageFolder(
         traindir,
         transforms.Compose([
@@ -227,6 +230,7 @@ def main_worker(gpu, ngpus_per_node, args):
     else:
         train_sampler = None
 
+    # 数据集加载器
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=(train_sampler is None),
         num_workers=args.workers, pin_memory=True, sampler=train_sampler)
@@ -369,6 +373,7 @@ def validate(val_loader, model, criterion, args):
 def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
     torch.save(state, filename)
     if is_best:
+        # 将路径A的文件复制到路径B
         shutil.copyfile(filename, 'model_best.pth.tar')
 
 
@@ -391,8 +396,11 @@ class AverageMeter(object):
         self.count += n
         self.avg = self.sum / self.count
 
+    # 打印该类时，会引用该魔法函数
     def __str__(self):
         fmtstr = '{name} {val' + self.fmt + '} ({avg' + self.fmt + '})'
+        # self.__dict__指的是当前类里的类变量
+        # **为将字典的值散列到fmtstr中
         return fmtstr.format(**self.__dict__)
 
 
