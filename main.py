@@ -20,9 +20,8 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
 
-model_names = sorted(name for name in models.__dict__
-    if name.islower() and not name.startswith("__")
-    and callable(models.__dict__[name]))
+# 将torchvision中现有的模型字典化并进行排序供来选择
+model_names = sorted(name for name in models.__dict__ if name.islower() and not name.startswith("__") and callable(models.__dict__[name]))
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 parser.add_argument('data', metavar='DIR',
@@ -83,8 +82,11 @@ def main():
     args = parser.parse_args()
 
     if args.seed is not None:
+        # 为python设置同一个随机数种子，方便复现
         random.seed(args.seed)
+        # 为torch设置同一个随机数种子，方便复现
         torch.manual_seed(args.seed)
+        # 使用默认卷积算法，配合上固定的随机数种子，方便复现
         cudnn.deterministic = True
         warnings.warn('You have chosen to seed training. '
                       'This will turn on the CUDNN deterministic setting, '
@@ -99,6 +101,7 @@ def main():
     if args.dist_url == "env://" and args.world_size == -1:
         args.world_size = int(os.environ["WORLD_SIZE"])
 
+    # 判断是否使用分布式训练
     args.distributed = args.world_size > 1 or args.multiprocessing_distributed
 
     ngpus_per_node = torch.cuda.device_count()
@@ -108,12 +111,16 @@ def main():
         args.world_size = ngpus_per_node * args.world_size
         # Use torch.multiprocessing.spawn to launch distributed processes: the
         # main_worker process function
+        # 开启多进程训练
+        # 1：执行训练步骤的函数
+        # 2：开启的进程数
+        # 3：训练函数的传入参数
         mp.spawn(main_worker, nprocs=ngpus_per_node, args=(ngpus_per_node, args))
     else:
         # Simply call main_worker function
         main_worker(args.gpu, ngpus_per_node, args)
 
-
+# 第一个参数是在单卡的时候才需要传入
 def main_worker(gpu, ngpus_per_node, args):
     global best_acc1
     args.gpu = gpu
@@ -265,6 +272,8 @@ def main_worker(gpu, ngpus_per_node, args):
 
 
 def train(train_loader, model, criterion, optimizer, epoch, args):
+    # 格式化变量
+    # 将变量作为类，方便更新和处理
     batch_time = AverageMeter('Time', ':6.3f')
     data_time = AverageMeter('Data', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
@@ -312,6 +321,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
 
 
 def validate(val_loader, model, criterion, args):
+
     batch_time = AverageMeter('Time', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
     top1 = AverageMeter('Acc@1', ':6.2f')
