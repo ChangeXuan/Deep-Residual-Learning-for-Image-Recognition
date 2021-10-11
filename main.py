@@ -20,6 +20,9 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
 
+# 自定义数据加载
+from SelfDataLoad import TinyDataLoader
+
 model_names = sorted(name for name in models.__dict__
     if name.islower() and not name.startswith("__")
     and callable(models.__dict__[name]))
@@ -206,14 +209,24 @@ def main_worker(gpu, ngpus_per_node, args):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
 
-    train_dataset = datasets.ImageFolder(
-        traindir,
+    # train_dataset = datasets.ImageFolder(
+    #     traindir,
+    #     transforms.Compose([
+    #         transforms.RandomResizedCrop(224),
+    #         transforms.RandomHorizontalFlip(),
+    #         transforms.ToTensor(),
+    #         normalize,
+    #     ]))
+    train_dataset = TinyDataLoader(
+        args.data, 
+        True,
         transforms.Compose([
             transforms.RandomResizedCrop(224),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             normalize,
-        ]))
+        ])    
+    )
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
@@ -224,16 +237,30 @@ def main_worker(gpu, ngpus_per_node, args):
         train_dataset, batch_size=args.batch_size, shuffle=(train_sampler is None),
         num_workers=args.workers, pin_memory=True, sampler=train_sampler)
 
-    val_loader = torch.utils.data.DataLoader(
-        datasets.ImageFolder(valdir, transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
+    # val_loader = torch.utils.data.DataLoader(
+    #     datasets.ImageFolder(valdir, transforms.Compose([
+    #         transforms.Resize(256),
+    #         transforms.CenterCrop(224),
+    #         transforms.ToTensor(),
+    #         normalize,
+    #     ])),
+    #     batch_size=args.batch_size, shuffle=False,
+    #     num_workers=args.workers, pin_memory=True)
+    val_dataset = TinyDataLoader(
+        args.data, 
+        False,
+        transforms.Compose([
+            transforms.RandomResizedCrop(224),
+            transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             normalize,
-        ])),
+        ])    
+    )
+    val_loader = torch.utils.data.DataLoader(
+        val_dataset,
         batch_size=args.batch_size, shuffle=False,
-        num_workers=args.workers, pin_memory=True)
-
+        num_workers=args.workers, pin_memory=True
+    )
     if args.evaluate:
         validate(val_loader, model, criterion, args)
         return
@@ -290,6 +317,9 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
 
         # compute output
         output = model(images)
+        # print(output)
+        # print(target)
+        # assert 1==2
         loss = criterion(output, target)
 
         # measure accuracy and record loss
@@ -410,6 +440,15 @@ def adjust_learning_rate(optimizer, epoch, args):
         param_group['lr'] = lr
 
 
+# top1-概率值排名第一的类别是正确类别的准确率
+# top5-概率值排在前五的类别是正确类别的准确率
+'''
+例如：
+正确类别是1,输出的概率张量为
+[0.301023,  0.8182187,  0.71007144,  0.80164504,  0.7268218,   0.58599055,  0.19250274,  0.9076816 ,  0.8101771,   0.49439466]
+在该张量中，概率值排名第一的为0.9076816，但是他对应的类别是7，故top1为0
+在该张量中，概率值 0.8182187排名为第二，对应的类别为1，在排在前五，故top5为1
+'''
 def accuracy(output, target, topk=(1,)):
     """Computes the accuracy over the k top predictions for the specified values of k"""
     with torch.no_grad():
