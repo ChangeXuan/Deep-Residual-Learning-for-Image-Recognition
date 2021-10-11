@@ -20,17 +20,12 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
 
-<<<<<<< HEAD
 # 自定义数据加载
 from SelfDataLoad import TinyDataLoader
 
 model_names = sorted(name for name in models.__dict__
     if name.islower() and not name.startswith("__")
     and callable(models.__dict__[name]))
-=======
-# 将torchvision中现有的模型字典化并进行排序供来选择
-model_names = sorted(name for name in models.__dict__ if name.islower() and not name.startswith("__") and callable(models.__dict__[name]))
->>>>>>> 73af2f5453f01361b04aa5eb0a8711c5a722a03b
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 parser.add_argument('data', metavar='DIR',
@@ -222,7 +217,6 @@ def main_worker(gpu, ngpus_per_node, args):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
 
-<<<<<<< HEAD
     # train_dataset = datasets.ImageFolder(
     #     traindir,
     #     transforms.Compose([
@@ -234,13 +228,6 @@ def main_worker(gpu, ngpus_per_node, args):
     train_dataset = TinyDataLoader(
         args.data, 
         True,
-=======
-    # 从pytorch中数据集增强操作
-    # 从traindir中加载数据集
-    # 并对数据集中的图像加以一下操作
-    train_dataset = datasets.ImageFolder(
-        traindir,
->>>>>>> 73af2f5453f01361b04aa5eb0a8711c5a722a03b
         transforms.Compose([
             transforms.RandomResizedCrop(224),
             transforms.RandomHorizontalFlip(),
