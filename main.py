@@ -20,12 +20,17 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
 
+<<<<<<< HEAD
 # 自定义数据加载
 from SelfDataLoad import TinyDataLoader
 
 model_names = sorted(name for name in models.__dict__
     if name.islower() and not name.startswith("__")
     and callable(models.__dict__[name]))
+=======
+# 将torchvision中现有的模型字典化并进行排序供来选择
+model_names = sorted(name for name in models.__dict__ if name.islower() and not name.startswith("__") and callable(models.__dict__[name]))
+>>>>>>> 73af2f5453f01361b04aa5eb0a8711c5a722a03b
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 parser.add_argument('data', metavar='DIR',
@@ -86,8 +91,11 @@ def main():
     args = parser.parse_args()
 
     if args.seed is not None:
+        # 为python设置同一个随机数种子，方便复现
         random.seed(args.seed)
+        # 为torch设置同一个随机数种子，方便复现
         torch.manual_seed(args.seed)
+        # 使用默认卷积算法，配合上固定的随机数种子，方便复现
         cudnn.deterministic = True
         warnings.warn('You have chosen to seed training. '
                       'This will turn on the CUDNN deterministic setting, '
@@ -102,6 +110,7 @@ def main():
     if args.dist_url == "env://" and args.world_size == -1:
         args.world_size = int(os.environ["WORLD_SIZE"])
 
+    # 判断是否使用分布式训练
     args.distributed = args.world_size > 1 or args.multiprocessing_distributed
 
     ngpus_per_node = torch.cuda.device_count()
@@ -111,12 +120,16 @@ def main():
         args.world_size = ngpus_per_node * args.world_size
         # Use torch.multiprocessing.spawn to launch distributed processes: the
         # main_worker process function
+        # 开启多进程训练
+        # 1：执行训练步骤的函数
+        # 2：开启的进程数
+        # 3：训练函数的传入参数
         mp.spawn(main_worker, nprocs=ngpus_per_node, args=(ngpus_per_node, args))
     else:
         # Simply call main_worker function
         main_worker(args.gpu, ngpus_per_node, args)
 
-
+# 第一个参数是在单卡的时候才需要传入
 def main_worker(gpu, ngpus_per_node, args):
     global best_acc1
     args.gpu = gpu
@@ -209,6 +222,7 @@ def main_worker(gpu, ngpus_per_node, args):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
 
+<<<<<<< HEAD
     # train_dataset = datasets.ImageFolder(
     #     traindir,
     #     transforms.Compose([
@@ -220,6 +234,13 @@ def main_worker(gpu, ngpus_per_node, args):
     train_dataset = TinyDataLoader(
         args.data, 
         True,
+=======
+    # 从pytorch中数据集增强操作
+    # 从traindir中加载数据集
+    # 并对数据集中的图像加以一下操作
+    train_dataset = datasets.ImageFolder(
+        traindir,
+>>>>>>> 73af2f5453f01361b04aa5eb0a8711c5a722a03b
         transforms.Compose([
             transforms.RandomResizedCrop(224),
             transforms.RandomHorizontalFlip(),
@@ -233,6 +254,7 @@ def main_worker(gpu, ngpus_per_node, args):
     else:
         train_sampler = None
 
+    # 数据集加载器
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=(train_sampler is None),
         num_workers=args.workers, pin_memory=True, sampler=train_sampler)
@@ -292,6 +314,8 @@ def main_worker(gpu, ngpus_per_node, args):
 
 
 def train(train_loader, model, criterion, optimizer, epoch, args):
+    # 格式化变量
+    # 将变量作为类，方便更新和处理
     batch_time = AverageMeter('Time', ':6.3f')
     data_time = AverageMeter('Data', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
@@ -342,6 +366,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
 
 
 def validate(val_loader, model, criterion, args):
+
     batch_time = AverageMeter('Time', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
     top1 = AverageMeter('Acc@1', ':6.2f')
@@ -389,6 +414,7 @@ def validate(val_loader, model, criterion, args):
 def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
     torch.save(state, filename)
     if is_best:
+        # 将路径A的文件复制到路径B
         shutil.copyfile(filename, 'model_best.pth.tar')
 
 
@@ -411,8 +437,11 @@ class AverageMeter(object):
         self.count += n
         self.avg = self.sum / self.count
 
+    # 打印该类时，会引用该魔法函数
     def __str__(self):
         fmtstr = '{name} {val' + self.fmt + '} ({avg' + self.fmt + '})'
+        # self.__dict__指的是当前类里的类变量
+        # **为将字典的值散列到fmtstr中
         return fmtstr.format(**self.__dict__)
 
 
